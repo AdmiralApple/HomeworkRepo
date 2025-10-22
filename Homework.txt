@@ -1,7 +1,5 @@
 Question 1:
-Is it possible to have OpenAi's Codex cloud agent execute Unity Play Mode test cases?
+Yes. The Codex cloud agent can execute Unity Play Mode test cases as long as the repository supplies the Unity project and the environment provides a headless-capable Unity Editor. By installing the Unity 2022.3.34f1 editor, granting the agent execute permissions, and invoking the Unity test runner with the appropriate flags (for example, `-runTests -testPlatform playmode`), the agent can drive Play Mode tests from the command line. Ensure the project uses a Unity Test Framework-supported configuration and that any platform-specific dependencies (graphics, audio, GPU) are either stubbed or run through supported headless substitutes so the automated session can complete without manual interaction.
 
 Question 2:
-Design a Setup script to use with OpenAi's Codex cloud agent and place it into its own txt file.
-This script will be used in an environment in which the user wants the Codex agent to be able to run the Play Mode Unity test cases in their attached repository.
-Target Unity version: 2022.3.34f1
+See SetupScript.txt for a Bash script that prepares the Codex cloud agent environment so it can invoke Unity 2022.3.34f1 in headless mode and run Play Mode tests via the Unity Test Framework.
