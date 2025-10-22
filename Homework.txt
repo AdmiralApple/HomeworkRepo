@@ -1,17 +1,3 @@
-Homework 8
-
-Theme: Input-Output
-
-Question with * should be submitted but will not be graded. All the remaining questions carry equal weight. Please give justification for the results (i.e., you must show the necessary calculation process and/or the corresponding diagrams; otherwise, no credits). Submit a PDF file to Canvas.
-
-1. Give at least one practical example each of when you will use Programmed I/O, Interrupt-Driven I/O, and DMA?  Justify your answer as to why you would not use the other two techniques in each case. 
-
-2. What are the relative merits and demerits of memory-mapped I/O and isolated I/O? 
-
-3. A DMA module is transferring characters to memory using cycle stealing, from a device transmitting at 12,400 bps. The processor is fetching instructions at the rate of 5 million instructions per second (MIPS). By how much will the processor be slowed down due to the DMA activity? Assume that each character uses 8 bits and bus transfers are one byte wide.
-
-4. A computer consists of a processor and an I/O device D connected to main memory M via a shared bus with a data bus width of one word.  The processor can execute a maximum of 4 MIPS.  An average instruction requires 4 machine cycles, 2 of which use the memory bus.  A memory read/write operation uses 1 machine cycle. Suppose that the processor is continuously executing “background” programs that require 95% of the instruction rate but not any I/O instructions.  Assume that one processor cycle equals one bus cycle.  Now suppose the I/O device is used to transfer very large amounts of data between M and D. 
-
-If programmed I/O is used and each one word transfer requires the processor to execute 4 instructions, estimate the max I/O data transfer rate in words/sec possible through D.
-Estimate the same rate if DMA is used.
-5. When a device sends an interrupt request to the CPU, discuss different ways the processor can determine which device issued the interrupt.  When a DMA module takes control of the bus, and while it retains control of the bus, what does the processor do? 
+Question 1:
+Design a Setup script to use with OpenAi's Codex cloud agent.
+This script will be used in an environment in which the user wants the Codex agent to be able to run the Play Mode Unity test cases in their attached repository.
