@@ -37,7 +37,14 @@ install_os_dependencies() {
 install_unity_downloader() {
   log "Installing unity-downloader-cli helper"
   python3 -m pip install --upgrade pip
-  python3 -m pip install --upgrade unity-downloader-cli
+  # Unity does not currently publish unity-downloader-cli to PyPI for every release.
+  # Try PyPI first for forwards compatibility, but fall back to the official GitHub
+  # repository when the index lacks a matching build.
+  if ! python3 -m pip install --upgrade unity-downloader-cli; then
+    log "PyPI package missing; falling back to GitHub unity-downloader-cli"
+    python3 -m pip install --upgrade \
+      "git+https://github.com/Unity-Technologies/unity-downloader-cli.git#egg=unity-downloader-cli"
+  fi
 }
 
 fetch_unity_editor() {
