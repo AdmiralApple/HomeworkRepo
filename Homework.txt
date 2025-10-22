@@ -1,3 +1,7 @@
 Question 1:
+Is it possible to have OpenAi's Codex cloud agent execute Unity Play Mode test cases?
+
+Question 2:
 Design a Setup script to use with OpenAi's Codex cloud agent.
 This script will be used in an environment in which the user wants the Codex agent to be able to run the Play Mode Unity test cases in their attached repository.
+Target Unity version: 2022.3.34f1
