@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+#
+# Prepare a Codex cloud agent container to run Unity 2022.3.34f1 Play Mode tests.
+# The script installs OS prerequisites, downloads the Unity editor headlessly,
+# configures the license file if provided, and exposes helper commands for test runs.
+
+set -euo pipefail
+
+UNITY_VERSION="2022.3.34f1"
+UNITY_INSTALL_ROOT="/opt/unity"
+UNITY_EDITOR_PATH="$UNITY_INSTALL_ROOT/Editor/Unity"
+UNITY_DOWNLOADER_CACHE="${UNITY_DOWNLOADER_CACHE:-$HOME/.cache/unity}"
+PROJECT_PATH="${PROJECT_PATH:-$PWD}"
+UNITY_MODULES="linux-il2cpp linux-mono"
+
+log() {
+  printf '[setup] %s\n' "$*"
+}
+
+require_root() {
+  if [[ "$(id -u)" -ne 0 ]]; then
+    log "Re-run this script with sudo or as root."
+    exit 1
+  fi
+}
+
+install_os_dependencies() {
+  log "Installing OS prerequisites for the Unity editor runtime"
+  apt-get update
+  # Ubuntu 24.04 (noble) exposes t64 variants for several legacy libs that Unity still needs.
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    ca-certificates curl unzip libgtk-3-0t64 libxss1 libasound2t64 xvfb \
+    libnss3 libx11-xcb1 libglu1-mesa libxi6 libpng16-16t64 libpulse0 \
+    python3 python3-pip
+}
+
+install_unity_downloader() {
+  log "Installing unity-downloader-cli helper"
+  python3 -m pip install --upgrade pip
+  # Unity does not currently publish unity-downloader-cli to PyPI for every release.
+  # Try PyPI first for forwards compatibility, but fall back to the official GitHub
+  # repository when the index lacks a matching build.
+  if ! python3 -m pip install --upgrade unity-downloader-cli; then
+    log "PyPI package missing; falling back to GitHub unity-downloader-cli"
+    python3 -m pip install --upgrade \
+      "git+https://github.com/Unity-Technologies/unity-downloader-cli.git#egg=unity-downloader-cli"
+  fi
+}
+
+fetch_unity_editor() {
+  log "Downloading Unity $UNITY_VERSION into $UNITY_INSTALL_ROOT"
+  mkdir -p "$UNITY_INSTALL_ROOT" "$UNITY_DOWNLOADER_CACHE"
+  UNITY_SETUP_OPTS=(
+    unity-downloader-cli \
+      --unity-version "$UNITY_VERSION" \
+      --install-location "$UNITY_INSTALL_ROOT" \
+      --download-location "$UNITY_DOWNLOADER_CACHE" \
+      --wait \
+      --components Editor ${UNITY_MODULES}
+  )
+  "${UNITY_SETUP_OPTS[@]}"
+}
+
+link_unity_binary() {
+  log "Symlinking Unity binary into PATH"
+  ln -sf "$UNITY_EDITOR_PATH" /usr/local/bin/unity-editor
+}
+
+configure_license() {
+  if [[ -n "${UNITY_LICENSE_FILE:-}" ]]; then
+    log "Copying provided Unity license file"
+    mkdir -p /root/.local/share/unity3d/Unity
+    cp "$UNITY_LICENSE_FILE" /root/.local/share/unity3d/Unity/Unity_lic.ulf
+  elif [[ -n "${UNITY_LICENSE_CONTENT:-}" ]]; then
+    log "Writing Unity license content from environment"
+    mkdir -p /root/.local/share/unity3d/Unity
+    printf '%s' "$UNITY_LICENSE_CONTENT" > /root/.local/share/unity3d/Unity/Unity_lic.ulf
+  else
+    log "No Unity license supplied. Codex agent must inject UNITY_LICENSE_FILE or UNITY_LICENSE_CONTENT before running tests."
+  fi
+}
+
+create_test_runner_helper() {
+  local helper_path="/usr/local/bin/run-unity-playmode-tests"
+  log "Creating helper wrapper $helper_path"
+  cat <<'WRAPPER' > "$helper_path"
+#!/usr/bin/env bash
+set -euo pipefail
+UNITY_EDITOR_PATH="/opt/unity/Editor/Unity"
+PROJECT_PATH="${PROJECT_PATH:-$PWD}"
+RESULTS_PATH="${UNITY_TEST_RESULTS:-$PROJECT_PATH/TestResults}"
+LOG_FILE="${UNITY_TEST_LOG:-$RESULTS_PATH/playmode.log}"
+mkdir -p "$RESULTS_PATH"
+"$UNITY_EDITOR_PATH" -batchmode -nographics -projectPath "$PROJECT_PATH" \
+  -runTests -testPlatform playmode -testResults "$RESULTS_PATH/results.xml" \
+  -logFile "$LOG_FILE"
+WRAPPER
+  chmod +x "$helper_path"
+}
+
+main() {
+  require_root
+  install_os_dependencies
+  install_unity_downloader
+  fetch_unity_editor
+  link_unity_binary
+  configure_license
+  create_test_runner_helper
+  log "Setup complete. Use run-unity-playmode-tests inside the Unity project workspace to execute Play Mode tests."
+}
+
+main "$@"
